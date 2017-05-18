@@ -14,7 +14,13 @@
 // @require      https://raw.githubusercontent.com/twitter-archive/twitter-text-js/version_1_9_1/twitter-text.js
 // @resource style https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css
 // @grant        GM_addStyle
-// @match        http://*weibo.com/*
+// @include           http://www.weibo.com/*
+// @include           http://weibo.com/*
+// @include           http://d.weibo.com/*
+// @include           http://s.weibo.com/*
+// @exclude           http://weibo.com/a/bind/*
+// @exclude           http://weibo.com/nguide/*
+// @exclude           http://weibo.com/
 // ==/UserScript==
 
 var keys = {
@@ -109,6 +115,7 @@ function loginTwitter(callback) {
 function getInsertWeibo(tweet) {
     var date = Date.parse(tweet.created_at);
     var arr = $('.WB_feed_type');
+    return arr[arr.length - 1];
     for (var i = 1; i < arr.length; i++) {
         var d = $(arr[i]).find('.WB_feed_detail .WB_detail .WB_from a').attr('date');
         if (d < date) {
@@ -234,9 +241,11 @@ function contentTweet2Weibo(tweet) {
     console.log(tweet);
     if (!max_id || max_id < tweet.id) {
         max_id = tweet.id;
+        localStorage.setItem('max_id', max_id);
     }
     if (!min_id || min_id > tweet.id) {
         min_id = tweet.id;
+        localStorage.setItem('min_id', min_id);
     }
     var user = tweet.user || {};
     var res = '<div class="WB_cardwrap WB_feed_type S_bg2">'
@@ -292,7 +301,7 @@ function contentTweet2Weibo(tweet) {
     return res;
 }
 
-var min_id = 0, max_id = 0;
+var min_id = localStorage.getItem('min_id') || 0, max_id = localStorage.getItem('max_id') || 0;
 
 function getNewTweets() {
     var params = {
@@ -300,14 +309,17 @@ function getNewTweets() {
         tweet_mode: "extended",
         exclude_replies: true
     };
-    if (min_id) {
-        params.max_id = min_id;
+    // if (min_id) {
+    //     params.max_id = min_id;
+    // }
+    if (max_id) {
+        params.since_id = max_id;
     }
     cb.__call(
         "statuses_homeTimeline",
         params,
         function (reply, rate, err) {
-            if (reply.length) {
+            if (reply.length && window.location.href.includes('/home')) {
                 reply.forEach(function (tweet) {
                     $(getInsertWeibo(tweet)).before(contentTweet2Weibo(tweet));
                 });
@@ -322,7 +334,11 @@ setInterval(function () {
             $(a).text(moment($(a).attr('date').fromNow()));
         }
     });
-}, 60 * 1000);
+
+    if (window.location.href.includes('/home')) {
+        getNewTweets();
+    }
+}, 30 * 1000);
 
 if (!localStorage.getItem('oauth_token')) {
     loginTwitter(getNewTweets);
