@@ -115,7 +115,7 @@ function loginTwitter(callback) {
 function getInsertWeibo(tweet) {
     var date = Date.parse(tweet.created_at);
     var arr = $('.WB_feed_type');
-    return arr[arr.length - 1];
+    // return arr[arr.length - 1];
     for (var i = 1; i < arr.length; i++) {
         var d = $(arr[i]).find('.WB_feed_detail .WB_detail .WB_from a').attr('date');
         if (d < date) {
@@ -301,11 +301,13 @@ function contentTweet2Weibo(tweet) {
     return res;
 }
 
-var min_id = localStorage.getItem('min_id') || 0, max_id = localStorage.getItem('max_id') || 0;
+// var min_id = localStorage.getItem('min_id') || 0, max_id = localStorage.getItem('max_id') || 0;
+
+var max_id = 0, min_id = 0;
 
 function getNewTweets() {
     var params = {
-        count: 20,
+        count: 40,
         tweet_mode: "extended",
         exclude_replies: true
     };
@@ -338,7 +340,7 @@ setInterval(function () {
     if (window.location.href.includes('/home')) {
         getNewTweets();
     }
-}, 30 * 1000);
+}, 60 * 1000);
 
 if (!localStorage.getItem('oauth_token')) {
     loginTwitter(getNewTweets);
